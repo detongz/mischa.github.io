@@ -1,5 +1,7 @@
 # Heat 认证模型第二部分 - Stack Domain Users
 
+翻译：zhangdetong
+
 原作者 Steve Hardy 是Heat社区的以为从很早就参与了设计和开发的一位核心开发者。
 作者写作时间是2014年8月，和上一篇一样，应该以Icehouse版本为准。
 翻译时间为2016年11月，Ocata版本正在开发中。
@@ -7,6 +9,8 @@
 [原文地址](https://hardysteven.blogspot.com/2014/04/heat-auth-model-updates-part-2-stack.html?showComment=1480042996365#c9135691387438895727)
 
 这篇文章里涉及到了最近被实现的[实例用户blueprint](https://blueprints.launchpad.net/heat/+spec/instance-users)，其中使用了keystone的[domain](https://github.com/openstack-attic/identity-api/blob/master/v3/src/markdown/identity-api-v3.md#domains-v3domains)，domain中用户相关的证书，这些证书是在heat创建的实例里部署的。
+
+**译文：**
 
 ## 所以为什么heat要创建用户呢？
 
@@ -49,4 +53,70 @@ heat-cfntools agent使用签名的请求，签名请求需要一个通过keyston
 
 ## “Stack Domain Users”的细节
 
-新的方法是有效的，一个对已有的实现进行的优化。我们封装了所有stack定义的用户（即由于heat模板里的内容而被创建的用户），把他们放到了一个另外的domain里，这个domain特别用来包含
+新的方法是一个对已有的实现进行的有效优化。我们封装了所有stack定义的用户（即由于heat模板里的内容而被创建的用户），把他们放到另一个隔开的domain里，这个domain是特别用来包含仅仅和heat stack有关的东西的。创建一个“domain admin”用户，heat使用这个用户，管理在“stack user domain”里用户的生命周期。
+
+下面我将讨论两个方面，一是部署环境的时候需要做的事，即启动Heat里的stack domain user（Icehouse或其后版本）；二是当创建一个stack的时候实际上做了什么，以及如何解决我们之前提出的问题：
+
+### 在部署heat的时候：
+
+- 生成一个特殊的keystone domain。例如一个成为“heat”且把heat.conf中的ID值设置为“stack_user_domain”
+- 生成一个有足够权限进行创建/删除project的用户，在“heat”这个domain下被创建。例如，在devstack中会生成一个“heat_domain_admin”的用户，并给予之heat domain的管理员role
+- domain admin用户的用户名/密码在heat.conf里进行设置（即stack_domain_admin和stack_domain_admin_password）。这个用户代表stack owner对“stack domain user”进行管理，因此stack owner本身并不必须是admin。由于heat_domain_admin仅赋予了“heat”domain的管理员权限，因此这个上报途径的风险得到了控制。
+
+这些都在使用近期的devstack时自动完成，但是如果使用其他方法进行部署，那需要使用python-openstackclient（这是keystone v3的CLI接口）进行domain和user的创建：
+
+### 创建domain：
+
+$OS_TOKEN 是以token，例如service admin token，或是其他对一个拥有有效的role进行user和domain创建的有效token。
+
+$KS_ENDPOINT_V3 是v3 keystone终端，例如 http://<keystone>:5000/v3，<keystone>是IP地址或是可以解析到的keystone service名。
+
+```
+openstack --os-token $OS_TOKEN --os-url=$KS_ENDPOINT_V3 --os-identity-api-version=3 domain create heat --description "Owns users and projects created by heat"
+```
+
+这行命令会返回一个domain ID，在下面会被用到$HEAT_DOMAIN_ID配置中。
+
+### 创建用户：
+
+openstack --os-token $OS_TOKEN --os-url=$KS_ENDPOINT_V3 --os-identity-api-version=3 user create --password $PASSWORD --domain $HEAT_DOMAIN_ID heat_domain_admin --description "Manages users and projects created by heat"
+
+这行命令返回user ID，在下面会被用到$DOMAIN_ADMIN_ID配置中。
+
+### 把用户设为domain管理员：
+
+openstack --os-token $OS_TOKEN --os-url=$KS_ENDPOINT_V3 --os-identity-api-version=3 role add --user $DOMAIN_ADMIN_ID --domain $HEAT_DOMAIN_ID admin
+
+接下来需把domain ID，用户名和密码添加到heat.conf里面：
+
+```
+stack_domain_admin_password = <password>
+
+
+stack_domain_admin = heat_domain_admin
+
+stack_user_domain = <domain id returned from domain create above>
+```
+
+### 当一个用户创建了一个stack时：
+
+- 如果stack包含任何需要创建一个“stack domain user”的resource的话，就要在“heat”domain下创建一个新的“stack domain project”
+- 任何需要一个用户的资源，我们在“stack domain project”中创建这个用户。它和heat stack在heat数据库里有关联关系，但是和stack owner project完全隔离且不相关（从认证的角度来说不相关）。
+- 用户创建stack domain依然会被分配heat_stack_user的role，在访问API的时候他们所能访问的是根据policy.json限制的。
+- 在解析API请求的时候，我们会做内部查询，并允stack owner的project（默认的stack的API路径）和“stack domain user”从数据库里获取某个制定的stack的详细信息，依然服从policy.json的配置。
+
+需要澄清最后一条，意思是目前有两个地址可以从heat API请求相同的信息，例如请求resource-metadata：
+
+```GET v1/​{stack_owner_project_id}​/stacks/​{stack_name}​/​{stack_id}​/resources/​{resource_name}​/metadata```
+
+或是
+
+```GET v1/​{stack_domain_project_id}​/stacks/​{stack_name}​/​{stack_id}​/resources/​{resource_name}​/metadata```
+
+stack owner会使用第一种方法（例如heat resource-metadata {stack_name} {resource_name}会使用第一种格式的get请求），其他instance中的用户都会使用第二种get方法。
+
+这解决了所有之前提出的问题：
+
+- stack owner 不再需要admin role，因为heat_domain_admin用户会管理stack domain user
+- 实现了完全隔离，在stack domain project里创建的用户不能够访问除了heat明确允许的资源以外的其他任何资源。访问任何其他的stack和访问任何stack-owner拥有的资源，都会失败
+- stack-owner project中的用户列表不受影响，因为我们已经在另一个domain里创建了一个完全不同的project

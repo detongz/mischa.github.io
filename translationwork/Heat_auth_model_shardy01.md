@@ -1,10 +1,14 @@
 # Heat 认证模型第一部分 - Trusts
 
+翻译：zhangdetong
+
 原作者 Steve Hardy 是Heat社区的以为从很早就参与了设计和开发的一位核心开发者
 这篇文章里 Steve 阐述了Heat内部使用的身份认证模型trust，这一认证机制也是keystone实现的多个身份认证模型的一种。
 shardy写文章的时间是2014年8月，翻译在2016年11月，文章应以Icehouse版为准。
 
 [原文地址](http://hardysteven.blogspot.co.uk/2014/04/heat-auth-model-updates-part-1-trusts.html)
+
+**译文：**
 
 近几个月我花了很多时间尝试寻找重构Heat认证模型的方法，要解决两个长时间存在的问题：
 
