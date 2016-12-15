@@ -21,7 +21,7 @@ axel -n 10 http://path/to/your/file
 ## yum repo for mysql-5.6-community-*
 
 This repo contains almost everything needed under a centos7 env:
-```http://repo.mysql.com/yum/mysql-5.6-community/el/7/i386/```
+**http://repo.mysql.com/yum/mysql-5.6-community/el/7/i386/**
 
 Either download rpm packages directly from this repo or download from [here]( http://repo.mysql.com/mysql-community-release-el7-5.noarch.rpm
 ) and install, if you are using the latter way please go through the reference link.
@@ -33,7 +33,11 @@ axel -n 10 http://repo.mysql.com/yum/mysql-5.6-community/el/7/i386/mysql-communi
 ```
 
 Download, then use ```yum install -y``` to install these packages, **in sequence**:
-mysql-community-common, mysql-community-libs, mysql-community-client, community-server
+
+ - mysql-community-common
+ - mysql-community-libs
+ - mysql-community-client
+ - community-server
 
 While installing community-common, it's likely to come up with an error that community-common confilicts with mariadb-libs-*. Remove mariadb-libs-* manually. ```yum remove mariadb-libs```
 
