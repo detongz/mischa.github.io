@@ -49,7 +49,7 @@ heat-cfntools agent使用签名的请求，签名请求需要一个通过keyston
  - 通过trusts授权一个用户role的子集（驳回）
  - 基于一些随机的“token”来搞我们自己的认证机制（一些人觉得这个想法不错，但是我反对之）
  - 使用keystone的OAuth秘钥和签名请求（由于keystoneclient不支持而驳回）
- - 通过创建一个完全隔离的heat专用的keystone domain，从而隔离实例里面的用户。这个方案是 [Adam Young](http://adam.younglogic.com/category/software/openstack/) 提出的，也是我们在[Icehouse版本中进行实现的方案](https://blueprints.launchpad.net/heat/+spec/instance-users)。
+   - 通过创建一个完全隔离的heat专用的keystone domain，从而隔离实例里面的用户。这个方案是 [Adam Young](http://adam.younglogic.com/category/software/openstack/) 提出的，也是我们在[Icehouse版本中进行实现的方案](https://blueprints.launchpad.net/heat/+spec/instance-users)。
 
 ## “Stack Domain Users”的细节
 
