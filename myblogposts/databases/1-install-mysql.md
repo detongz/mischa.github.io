@@ -21,7 +21,7 @@ axel -n 10 http://path/to/your/file
 ## yum repo for mysql-5.6-community-*
 
 This repo contains almost everything needed under a centos7 env:
-```http://repo.mysql.com/yum/mysql-5.6-community/el/7/i386/```
+**http://repo.mysql.com/yum/mysql-5.6-community/el/7/i386/**
 
 Either download rpm packages directly from this repo or download from [here]( http://repo.mysql.com/mysql-community-release-el7-5.noarch.rpm
 ) and install, if you are using the latter way please go through the reference link.
