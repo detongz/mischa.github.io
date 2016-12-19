@@ -8,7 +8,7 @@ Blogs online are buggy, my propose for writing this one is to reduce bugs when i
 
 *This blog is focusing on centos7.*
 
-## axel - a friend for all low bandwidth users
+## axel - a friend of all low bandwidth users
 
 Insdead of anxiously waiting wget to finish its procedure or the browser to reconnect its lost connection, axel is a preferable cli tool for linux users that helps us download more quickly.
 Axel downloads in parallel, use ```-n``` to specify the number of processes to download.
