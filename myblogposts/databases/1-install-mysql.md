@@ -13,6 +13,8 @@ Blogs online are buggy, my propose for writing this one is to reduce bugs when i
 Insdead of anxiously waiting wget to finish its procedure or the browser to reconnect its lost connection, axel is a preferable cli tool for linux users that helps us download more quickly.
 Axel downloads in parallel, use ```-n``` to specify the number of processes to download.
 
+Axel download source is [here](http://dl.fedoraproject.org/pub/epel/7/x86_64/a/axel-2.4-9.el7.x86_64.rpm).
+
 For example:
 ```
 axel -n 10 http://path/to/your/file
